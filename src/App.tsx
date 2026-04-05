@@ -427,15 +427,11 @@ export default function App() {
     } catch (error) {
       console.error("FRIDAY Reasoning Error:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      let friendlyError = "Something went wrong. Try again, Boss.";
-      if (errorMessage.includes("RESOURCE_EXHAUSTED") || errorMessage.includes("quota")) {
-        friendlyError = "⚠️ Too many requests at once — Gemini free tier limit hit. Wait 30 seconds and try again, Boss.";
-      } else if (errorMessage.includes("API_KEY") || errorMessage.includes("403")) {
-        friendlyError = "🔑 API key issue. Check your GEMINI_API_KEY in Render environment variables.";
-      } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
-        friendlyError = "📡 Network error. Check your connection and try again.";
-      } else if (errorMessage.includes("not found") || errorMessage.includes("404")) {
-        friendlyError = "🤖 Model not available. The AI model may be temporarily down.";
+      let friendlyError = 'Something went wrong. Try again, Boss.';
+      if (errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota') || errorMessage.includes('429')) {
+        friendlyError = '⚠️ Too many requests — wait 30 seconds and try again, Boss.';
+      } else if (errorMessage.includes('API_KEY') || errorMessage.includes('403')) {
+        friendlyError = '🔑 API key issue. Check environment variables.';
       }
       setMessages(prev => [...prev, { role: 'model', content: friendlyError }]);
     } finally {
@@ -517,18 +513,13 @@ export default function App() {
     if (!input.trim()) return;
     setIsLoading(true);
     setMessages(prev => [...prev, { role: 'user', content: `Generate video: ${input}` }]);
-    setMessages(prev => [...prev, { role: 'model', content: '🎬 Generating video with Veo 2... This takes ~1 minute. Stand by, Boss.' }]);
+    setMessages(prev => [...prev, { role: 'model', content: '🎬 Generating video with Veo 2... ~1 minute. Stand by, Boss.' }]);
     try {
       const videoUrl = await generateVideo(input);
       if (videoUrl) {
         setMessages(prev => {
           const updated = [...prev];
-          updated[updated.length - 1] = {
-            role: 'model',
-            content: 'Video generated. High-fidelity render complete.',
-            type: 'video',
-            videoUrl
-          };
+          updated[updated.length - 1] = { role: 'model', content: 'Video ready. High-fidelity render complete, Boss.', type: 'video', videoUrl };
           return updated;
         });
       }
@@ -547,6 +538,7 @@ export default function App() {
 
   if (!isStarted) {
     return (
+      <div className="min-h-screen bg-[#f8f9fa] text-[#1f1f1f] font-sans overflow-hidden relative flex items-center justify-center">
         {/* Animated Background */}
         <div className="absolute inset-0 z-0">
           <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-blue-600/5 blur-[150px] animate-pulse" />
@@ -732,11 +724,7 @@ export default function App() {
                   </div>
                 ) : msg.type === 'video' ? (
                   <div className="space-y-3">
-                    <video 
-                      src={msg.videoUrl} 
-                      controls
-                      className="rounded-lg w-full max-w-sm border border-white/10"
-                    />
+                    <video src={msg.videoUrl} controls className="rounded-lg w-full max-w-sm border border-white/10" />
                     <p className="text-sm opacity-80">{msg.content}</p>
                   </div>
                 ) : msg.type === 'audio' ? (
@@ -872,7 +860,7 @@ export default function App() {
               <button 
                 onClick={handleVideoGen}
                 className="p-5 rounded-full hover:bg-black/[0.03] transition-all text-black/20 hover:text-red-500 active:scale-90"
-                title="Generate Video (Veo 2)"
+                title="Generate Video"
               >
                 <Terminal className="w-5 h-5" />
               </button>
