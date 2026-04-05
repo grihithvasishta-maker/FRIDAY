@@ -1,0 +1,8 @@
+{
+  "name": "FRIDAY",
+  "description": "A high-level, brutally honest executive assistant interface with advanced model routing and iOS overkill aesthetic.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

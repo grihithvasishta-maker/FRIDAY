@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "personalization": {
+      "title": "Personalization",
+      "description": "User preferences and history for personalization.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User ID" },
+        "name": { "type": "string", "description": "User's name" },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "theme": { "type": "string", "enum": ["light", "dark", "system"] },
+            "isMuted": { "type": "boolean" },
+            "customInstructions": { "type": "string" }
+          }
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string", "enum": ["user", "model"] },
+              "content": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      },
+      "required": ["uid"]
+    }
+  },
+  "firestore": {
+    "/personalization/{uid}": {
+      "schema": "personalization",
+      "description": "User-specific personalization data."
+    }
+  }
+}

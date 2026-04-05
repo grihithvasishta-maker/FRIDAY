@@ -1,0 +1,65 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: personalization
+// Document ID: {uid} (Firebase Auth UID)
+// Fields:
+//   - uid: string (required) - User's unique identifier
+//   - name: string (optional) - User's display name
+//   - preferences: map (optional)
+//     - theme: string (enum: 'light', 'dark', 'system')
+//     - isMuted: boolean
+//     - customInstructions: string
+//   - history: array of maps (optional)
+//     - role: string (enum: 'user', 'model')
+//     - content: string
+//     - timestamp: string (ISO 8601)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasOnlyAllowedFields(allowedFields) {
+      return request.resource.data.keys().hasOnly(allowedFields);
+    }
+
+    function isValidPersonalization(data) {
+      return data.uid is string && data.uid == request.auth.uid &&
+             (!('name' in data) || (data.name is string && data.name.size() < 100)) &&
+             (!('preferences' in data) || (data.preferences is map)) &&
+             (!('history' in data) || (data.history is list && data.history.size() <= 100));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /personalization/{uid} {
+      // Only the owner can read or write their own personalization data
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidPersonalization(request.resource.data);
+      allow update: if isOwner(uid) && isValidPersonalization(request.resource.data);
+      allow delete: if isOwner(uid);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
