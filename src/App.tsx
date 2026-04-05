@@ -544,8 +544,9 @@ export default function App() {
       setInput('');
     }
   };
+
+  if (!isStarted) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] text-[#1f1f1f] font-sans overflow-hidden relative flex items-center justify-center">
         {/* Animated Background */}
         <div className="absolute inset-0 z-0">
           <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-blue-600/5 blur-[150px] animate-pulse" />
