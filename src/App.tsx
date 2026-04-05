@@ -22,7 +22,7 @@ import {
   Music
 } from 'lucide-react';
 import { cn } from './lib/utils';
-import { generateResponse, generateResponseWithPersonalization, generateSpeech, generateImage, editImage, analyzeImage, generateMusic, correctInput } from './lib/gemini';
+import { generateResponse, generateResponseWithPersonalization, generateSpeech, generateImage, generateImageHQ, generateVideo, editImage, analyzeImage, generateMusic, correctInput } from './lib/gemini';
 import { delegateToGemma } from './lib/gemma';
 import ReactMarkdown from 'react-markdown';
 import { CodePreview } from './components/CodePreview';
@@ -33,9 +33,10 @@ import { LogIn, LogOut, User as UserIcon } from 'lucide-react';
 interface Message {
   role: 'user' | 'model';
   content: string;
-  type?: 'text' | 'image' | 'audio';
+  type?: 'text' | 'image' | 'audio' | 'video';
   imageUrl?: string;
   audioUrl?: string;
+  videoUrl?: string;
 }
 
 export default function App() {
@@ -502,7 +503,37 @@ export default function App() {
     }
   };
 
-  if (!isStarted) {
+  const handleVideoGen = async () => {
+    if (!input.trim()) return;
+    setIsLoading(true);
+    setMessages(prev => [...prev, { role: 'user', content: `Generate video: ${input}` }]);
+    setMessages(prev => [...prev, { role: 'model', content: '🎬 Generating video with Veo 2... This takes ~1 minute. Stand by, Boss.' }]);
+    try {
+      const videoUrl = await generateVideo(input);
+      if (videoUrl) {
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: 'model',
+            content: 'Video generated. High-fidelity render complete.',
+            type: 'video',
+            videoUrl
+          };
+          return updated;
+        });
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Video generation failed.';
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: 'model', content: `Video module error: ${msg}` };
+        return updated;
+      });
+    } finally {
+      setIsLoading(false);
+      setInput('');
+    }
+  };
     return (
       <div className="min-h-screen bg-[#f8f9fa] text-[#1f1f1f] font-sans overflow-hidden relative flex items-center justify-center">
         {/* Animated Background */}
@@ -688,6 +719,15 @@ export default function App() {
                     />
                     <p className="text-sm opacity-80">{msg.content}</p>
                   </div>
+                ) : msg.type === 'video' ? (
+                  <div className="space-y-3">
+                    <video 
+                      src={msg.videoUrl} 
+                      controls
+                      className="rounded-lg w-full max-w-sm border border-white/10"
+                    />
+                    <p className="text-sm opacity-80">{msg.content}</p>
+                  </div>
                 ) : msg.type === 'audio' ? (
                   <div className="space-y-3">
                     <audio 
@@ -818,6 +858,13 @@ export default function App() {
             />
 
             <div className="flex items-center gap-1 pr-2">
+              <button 
+                onClick={handleVideoGen}
+                className="p-5 rounded-full hover:bg-black/[0.03] transition-all text-black/20 hover:text-red-500 active:scale-90"
+                title="Generate Video (Veo 2)"
+              >
+                <Terminal className="w-5 h-5" />
+              </button>
               <button 
                 onClick={handleMusicGen}
                 className="p-5 rounded-full hover:bg-black/[0.03] transition-all text-black/20 hover:text-blue-500 active:scale-90"
