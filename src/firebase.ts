@@ -1,69 +1,27 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, getDocFromServer, collection, getDocs } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, getDocFromServer } from 'firebase/firestore';
+
+const firebaseConfig = {
+  projectId: "gen-lang-client-0025084840",
+  appId: "1:182426590371:web:3b6e07085c6f1dcce4f316",
+  apiKey: "AIzaSyCDD92RVjLZwbDBCaxVb2O5C82BDcxXLZ0",
+  authDomain: "gen-lang-client-0025084840.firebaseapp.com",
+  storageBucket: "gen-lang-client-0025084840.firebasestorage.app",
+  messagingSenderId: "182426590371",
+  measurementId: ""
+};
+
+const firestoreDatabaseId = "ai-studio-c59e5695-5c54-445d-b643-7a86fdc7eeb6";
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app, firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ hl: 'en' });
 
-export enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-export interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId: string | undefined;
-    email: string | null | undefined;
-    emailVerified: boolean | undefined;
-    isAnonymous: boolean | undefined;
-    tenantId: string | null | undefined;
-    providerInfo: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
-  }
-}
-
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
-    },
-    operationType,
-    path
-  }
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
-
-export { signInWithPopup, onAuthStateChanged, doc, getDoc, setDoc, onSnapshot, getDocFromServer, collection, getDocs };
+export { signInWithPopup, onAuthStateChanged, doc, getDoc, setDoc, onSnapshot, getDocFromServer };
 export type { User };
 
-// Test connection
 async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
