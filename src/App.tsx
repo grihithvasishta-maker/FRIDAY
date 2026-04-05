@@ -427,7 +427,17 @@ export default function App() {
     } catch (error) {
       console.error("FRIDAY Reasoning Error:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      setMessages(prev => [...prev, { role: 'model', content: `Critical failure in reasoning tier: ${errorMessage}. Boss, check the system logs.` }]);
+      let friendlyError = "Something went wrong. Try again, Boss.";
+      if (errorMessage.includes("RESOURCE_EXHAUSTED") || errorMessage.includes("quota")) {
+        friendlyError = "⚠️ Too many requests at once — Gemini free tier limit hit. Wait 30 seconds and try again, Boss.";
+      } else if (errorMessage.includes("API_KEY") || errorMessage.includes("403")) {
+        friendlyError = "🔑 API key issue. Check your GEMINI_API_KEY in Render environment variables.";
+      } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+        friendlyError = "📡 Network error. Check your connection and try again.";
+      } else if (errorMessage.includes("not found") || errorMessage.includes("404")) {
+        friendlyError = "🤖 Model not available. The AI model may be temporarily down.";
+      }
+      setMessages(prev => [...prev, { role: 'model', content: friendlyError }]);
     } finally {
       setIsLoading(false);
     }
