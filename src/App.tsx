@@ -27,7 +27,7 @@ import { delegateToGemma } from './lib/gemma';
 import ReactMarkdown from 'react-markdown';
 import { CodePreview } from './components/CodePreview';
 import confetti from 'canvas-confetti';
-import { auth, db, googleProvider, signInWithPopup, onAuthStateChanged, doc, getDoc, setDoc, onSnapshot, User, handleFirestoreError, OperationType } from './firebase';
+import { auth, db, googleProvider, signInWithPopup, onAuthStateChanged, doc, getDoc, setDoc, onSnapshot, User } from './firebase';
 import { LogIn, LogOut, User as UserIcon } from 'lucide-react';
 
 interface Message {
@@ -42,7 +42,6 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [personalization, setPersonalization] = useState<any>(null);
   const [isStarted, setIsStarted] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     { role: 'model', content: "System online. FRIDAY active. What's the directive, Boss?" }
@@ -52,7 +51,7 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [micActivity, setMicActivity] = useState(0);
   const [systemStatus, setSystemStatus] = useState<string | null>(null);
-  const [clapCount, setClapCount] = useState(0);
+  const [snapCount, setSnapCount] = useState(0);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -63,7 +62,6 @@ export default function App() {
       setUser(currentUser);
       if (currentUser) {
         // Load personalization
-        const path = `personalization/${currentUser.uid}`;
         const personalDoc = doc(db, 'personalization', currentUser.uid);
         onSnapshot(personalDoc, (snapshot) => {
           if (snapshot.exists()) {
@@ -76,11 +74,9 @@ export default function App() {
               preferences: { theme: 'system', isMuted: false },
               history: []
             };
-            setDoc(personalDoc, initialData).catch(err => handleFirestoreError(err, OperationType.CREATE, path));
+            setDoc(personalDoc, initialData);
             setPersonalization(initialData);
           }
-        }, (error) => {
-          handleFirestoreError(error, OperationType.GET, path);
         });
       } else {
         setPersonalization(null);
@@ -90,18 +86,10 @@ export default function App() {
   }, []);
 
   const handleLogin = async () => {
-    setIsLoggingIn(true);
-    setSystemStatus("Establishing Secure Connection...");
     try {
       await signInWithPopup(auth, googleProvider);
-      setSystemStatus("Authentication Successful.");
-      setTimeout(() => setSystemStatus(null), 2000);
     } catch (error) {
       console.error("Login failed:", error);
-      setSystemStatus("Authentication Failed.");
-      setTimeout(() => setSystemStatus(null), 3000);
-    } finally {
-      setIsLoggingIn(false);
     }
   };
 
@@ -121,17 +109,17 @@ export default function App() {
     scrollToBottom();
   }, [messages]);
 
-  // Clap Clap Protocol
+  // Snap Snap Protocol
   useEffect(() => {
-    if (clapCount === 2) {
-      handleClapClap();
-      setClapCount(0);
+    if (snapCount === 2) {
+      handleSnapSnap();
+      setSnapCount(0);
     }
-    const timer = setTimeout(() => setClapCount(0), 1000);
+    const timer = setTimeout(() => setSnapCount(0), 1000);
     return () => clearTimeout(timer);
-  }, [clapCount]);
+  }, [snapCount]);
 
-  // Clap Detection Logic (Microphone)
+  // Snap Detection Logic (Microphone)
   useEffect(() => {
     let audioContext: AudioContext | null = null;
     let analyser: AnalyserNode | null = null;
@@ -160,7 +148,7 @@ export default function App() {
             console.warn("AudioContext is suspended. Click anywhere to resume.");
           }
           
-          // Use Time Domain Data for sharp transients like claps
+          // Use Time Domain Data for sharp transients like snaps
           analyser.getByteTimeDomainData(dataArray);
           let maxVal = 0;
           let sum = 0;
@@ -173,13 +161,13 @@ export default function App() {
           // Update mic activity for visual feedback
           setMicActivity(sum / bufferLength);
 
-          // A clap is a sharp peak in the time domain
-          if (maxVal > 75) { // Adjusted for claps (slightly higher threshold)
+          // A snap is a sharp peak in the time domain
+          if (maxVal > 60) { // Slightly more sensitive
             const now = Date.now();
             if (now - lastPeakTime > 400) { // Debounce
-              setClapCount(prev => prev + 1);
+              setSnapCount(prev => prev + 1);
               lastPeakTime = now;
-              console.log("Clap Detected! Count:", clapCount + 1);
+              console.log("Acoustic Peak Detected! Count:", snapCount + 1);
             }
           }
           animationFrameId = requestAnimationFrame(checkAudio);
@@ -196,7 +184,7 @@ export default function App() {
         window.addEventListener('click', resume);
         window.addEventListener('keydown', resume);
       } catch (err) {
-        console.error("Clap detection failed:", err);
+        console.error("Snap detection failed:", err);
       }
     };
 
@@ -211,7 +199,7 @@ export default function App() {
     };
   }, [user, isRecording]);
 
-  const handleClapClap = () => {
+  const handleSnapSnap = () => {
     confetti({
       particleCount: 150,
       spread: 70,
@@ -219,7 +207,7 @@ export default function App() {
       colors: ['#00f2ff', '#7000ff', '#ffffff']
     });
 
-    const youtubeLink = "https://www.youtube.com/watch?v=AMCwYdTJ_PE&list=RDphLb_SoPBlA&index=2";
+    const youtubeLink = "https://www.youtube.com/watch?v=2SUwOgmvzK4&list=RD2SUwOgmvzK4&start_radio=1";
     const gravityLink = "https://mrdoob.com/projects/chromeexperiments/google-gravity/";
 
     // Attempt to open links (may be blocked by browser popup blockers)
@@ -228,7 +216,7 @@ export default function App() {
 
     setMessages(prev => [...prev, { 
       role: 'model', 
-      content: `**Clap Clap Protocol Initialized.**\n\n[OPENING_ANTIGRAVITY](${gravityLink})\n[PLAYING_PLAYLIST](${youtubeLink})\n\nBoss, your workspace is ready. If the tabs didn't open, check your popup blocker.` 
+      content: `**Snap Snap Protocol Initialized.**\n\n[OPENING_ANTIGRAVITY](${gravityLink})\n[PLAYING_PLAYLIST](${youtubeLink})\n\nBoss, your workspace is ready. If the tabs didn't open, check your popup blocker.` 
     }]);
 
     document.body.classList.add('animate-bounce');
@@ -315,7 +303,7 @@ export default function App() {
 
   const handleSend = async (overrideInput?: string, isVoice: boolean = false) => {
     const currentInput = overrideInput || input;
-    if (currentInput === "Clap Clap") {
+    if (currentInput === "Snap Snap") {
       const triggerResponse = JSON.stringify({
         "action": "TRIGGER_GRAVITY",
         "playlist_url": "https://www.youtube.com/watch?v=Ekg3BBmxImo&list=RDMx_yZk47YN4",
@@ -630,39 +618,24 @@ export default function App() {
           </div>
         </div>
         
-          <div className="flex items-center gap-3">
-            {user ? (
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-end">
-                  <span className="text-xs font-medium text-[#1f1f1f]">{user.displayName}</span>
-                  <button onClick={handleLogout} className="text-[10px] text-red-500 hover:underline">Logout</button>
-                </div>
-                <img src={user.photoURL || ""} alt="User" className="w-10 h-10 rounded-full border border-black/5" />
+        <div className="flex items-center gap-3">
+          {user ? (
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-medium text-[#1f1f1f]">{user.displayName}</span>
+                <button onClick={handleLogout} className="text-[10px] text-red-500 hover:underline">Logout</button>
               </div>
-            ) : (
-              <button 
-                onClick={handleLogin}
-                disabled={isLoggingIn}
-                className={cn(
-                  "flex items-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-bold transition-all active:scale-95 shadow-xl",
-                  isLoggingIn 
-                    ? "bg-gray-400 cursor-not-allowed" 
-                    : "bg-[#1f1f1f] hover:bg-black shadow-black/10"
-                )}
-              >
-                {isLoggingIn ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Zap className="w-4 h-4" />
-                  </motion.div>
-                ) : (
-                  <LogIn className="w-4 h-4" />
-                )}
-                {isLoggingIn ? "AUTHORIZING..." : "SYSTEM LOGIN"}
-              </button>
-            )}
+              <img src={user.photoURL || ""} alt="User" className="w-10 h-10 rounded-full border border-black/5" />
+            </div>
+          ) : (
+            <button 
+              onClick={handleLogin}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+            >
+              <LogIn className="w-4 h-4" />
+              Login
+            </button>
+          )}
           <button 
             onClick={() => setIsMuted(!isMuted)}
             className="p-4 rounded-full hover:bg-black/[0.03] transition-all active:scale-90"
@@ -803,15 +776,15 @@ export default function App() {
           <div className="absolute inset-0 bg-blue-500/[0.01] blur-[120px] -z-10 rounded-full" />
           <div className="bg-white/80 backdrop-blur-[80px] border border-black/[0.05] rounded-full p-2 flex items-center gap-2 shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
             <button 
-              onClick={() => setClapCount(prev => prev + 1)}
+              onClick={() => setSnapCount(prev => prev + 1)}
               className="p-5 rounded-full hover:bg-black/[0.03] transition-all active:scale-90 group relative"
-              title="Clap Clap Protocol"
+              title="Snap Snap Protocol"
             >
               <Zap className={cn(
                 "w-5 h-5 transition-colors",
-                clapCount > 0 ? "text-blue-500 animate-ping" : "text-black/20 group-hover:text-blue-500"
+                snapCount > 0 ? "text-blue-500 animate-ping" : "text-black/20 group-hover:text-blue-500"
               )} />
-              {clapCount > 0 && (
+              {snapCount > 0 && (
                 <span className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
               )}
             </button>
